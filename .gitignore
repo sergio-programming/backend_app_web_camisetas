@@ -1,0 +1,61 @@
+# ───────────────────────────
+# Node / Express Backend
+# ───────────────────────────
+
+# Dependencias
+node_modules/
+
+# Archivos de entorno
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# PIDs
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Cache
+.cache/
+.tmp/
+temp/
+tmp/
+
+# Coverage (si usas Jest o NYC)
+coverage/
+.nyc_output/
+
+# Build
+dist/
+build/
+
+# Carpetas del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de Render / Vercel / Docker (si los generas)
+render.yaml
+vercel.json
+docker-compose.yml
+Dockerfile
+
+# Carpeta de subidas (si tu API guarda imágenes o archivos)
+uploads/
+public/uploads/
+
+# Editor configs
+.vscode/
+.idea/
+*.swp
+*.swo
