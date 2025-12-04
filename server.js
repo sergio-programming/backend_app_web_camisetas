@@ -15,7 +15,10 @@ const app = express();
 app.use(express.json()); // Permite el analisis de solicitudes en formato JSON
 app.use(cookieParser());
 app.use(cors({
-    origin: true,
+    origin: [
+        'http://localhost:4200',
+        'https://app-web-camisetas.vercel.app'
+    ],
     credentials: true
 })); // Habilita CORS para permitir peticiones externas
 
