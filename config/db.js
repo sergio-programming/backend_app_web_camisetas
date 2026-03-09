@@ -1,11 +1,37 @@
 import mongoose from "mongoose";
 
-export const connectDB = async () => {
-    try {
-        await mongoose.connect(process.env.MONGOURI);
-        console.log("Conectado a la base de datos MongoDB");
-    } catch (error) {
-        console.error("Error al conectar con la base de datos: ", error);
-        process.exit(1); // Cerramos el proceso si no se puede conectar (evita que la app siga corriendo sin DB)
+let isConnected = false;
+
+export const connectToDatabase = async() => {
+    // Si tenemos una conexión la reutilizamos
+    if (isConnected) {
+        return mongoose.connection;
     }
+
+    const mongoUri = process.env.MONGOURI;
+
+    // Listener de conexión exitosa
+    mongoose.connection.once('connected', () => {
+        console.log('Conectado a Mongo DB');
+    });
+
+    // Listener de error de conexión
+    mongoose.connection.on('error', err => {
+        console.log('Error al conectar a Mongo DB:' , err);
+    });
+
+    mongoose.connection.on('disconnected', () => {
+        console.log('Desconectado a Mongo DB');
+    });
+
+    await mongoose.connect(mongoUri, {
+        autoIndex: true,
+        maxPoolSize: 10,
+    })
+
+    isConnected = true;
+    return mongoose.connection;
+
+
+
 }

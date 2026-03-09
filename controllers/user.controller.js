@@ -1,152 +1,177 @@
-import { User } from "../models/user.model.js";
-import bcrypt from 'bcryptjs';
+import { AppError } from '../helpers/app.error.js';
+import { hashPassword } from '../helpers/password.helpers.js';
+import {
+    getUsersService,
+    getUserByIdService,
+    createUserService,
+    updateUserService,
+    deleteUserService,
+    cancelUserService,
+    activateUserService,
+    validateCreateUserInput,
+    validateUpdateUserInput
+} from '../services/user.services.js';
 
-export const getUsers = async (req, res) => {
+
+export const getUsers = async (req, res, next) => {
     try {
-        
-        const users = await User.find();
+        const users = await getUsersService();
 
-        if (users.length === 0) {
-            return res.status(404).json({ message : 'No se encuentra usuarios registrados actualmente' });
-        }
-
-        return res.status(200).json(users);
+        res.status(200).json(users);
 
     } catch (error) {
-        console.error('Error al obtener los usuarios: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const getUserById = async (req, res) => {
+export const getUser = async (req, res, next) => {
     try {
         
         const { id } = req.params;
-        const user = await User.findById(id);
+        const user = await getUserByIdService(id);
 
         if (!user) {
-            return res.status(404).json({ message : 'No se encuentra un usuario registrado con ese id' });
+            return res.status(200).json(null)
         }
 
-        const { password: _, ...userResponse } = user.toObject();
-        return res.status(200).json(userResponse);
+        const { password: _, ...userResponse } = user;
+        res.status(200).json(userResponse);
 
     } catch (error) {
-        console.error('Error al obtener el usuario: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const createUser = async (req, res) => {
+export const createUser = async (req, res, next) => {
     try {
 
-        const saltRounds = 10;
-        const { email, nombre, password, role } = req.body;
+        const validatedData = await validateCreateUserInput(req.body);
 
-        if (!email || !nombre || !password || !role) {
-            return res.status(400).json({ message : 'Los campos requeridos son obligatorios' });
-        }
+        const hashedPassword = hashPassword(validatedData.password);
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return res.status(400).json({ message : 'El email debe tener un formato válido' });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ message : 'La contraseña debe tener una longitud mínima de 6 caracteres' });
-        }
-
-        if (role !== "superadmin" && role !== "admin") {
-            return res.status(400).json({ message : "El rol enviado no es válido" });
-        }
-
-        const userByEmail = await User.findOne({ email : email });
-        
-        if (userByEmail) {
-            return res.status(409).json({ message : `Ya existe un usuario registrado con el email ${email}` })
-        }
-
-        const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-        const newUser = new User ({
-            email,
-            nombre,
-            password: hashedPassword,
-            role
+        const newUser = await createUserService({
+            ...validatedData,
+            password: hashedPassword
         });
 
-        const createdUser = await newUser.save();
-        const { password: _, ...userResponse } = createdUser.toObject();
+        const { password: _, ...userResponse } = newUser;
 
-        return res.status(201).json({
+        res.status(201).json({
             message : 'El usuario se ha creado correctamente',
             user : userResponse
         });
 
     } catch (error) {   
-        console.error('Error al crear el usuario: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
     try {
         
         const { id } = req.params;
-        const { email, nombre, role, activo } = req.body;
+        
+        const validatedData = await validateUpdateUserInput(req.body);
 
-        const user = await User.findById(id);
-
-        if (!user) {
-            return res.status(404).json({ message : 'No se encuentra un usuario registrado con ese id' });
+        if (validatedData.password && validatedData.password !== '') {
+            validatedData.password = await hashPassword(validatedData.password);
+        } else {
+            delete validatedData.password;
         }
 
-        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-            return res.status(400).json({ message : 'El email debe tener un formato válido' });
+        const updatedUser = await updateUserService(id, validatedData);
+
+        if (!updatedUser) {
+            return next(new AppError(
+                'No se pudo actualizar: usuario no encontrado',
+                404
+            ));
         }
 
-        if (role && (role !== "superadmin" && role !== "admin")) {
-            return res.status(400).json({ message : 'El rol enviado no es válido' });
-        }
+        const { password: _, ...userResponse } = updatedUser;
 
-        if (activo !== undefined && typeof activo !== "boolean") {
-            return res.status(400).json({ message : 'El atributo "activo" debe ser booleano (true/false)' });
-        }
-
-        if (email !== undefined) user.email = email;
-        if (nombre !== undefined) user.nombre = nombre;
-        if (role !== undefined) user.role = role;
-        if (activo !== undefined) user.activo = activo;
-
-        await user.save();
-        const { password: _, ...userResponse } = user.toObject();
-
-        return res.status(200).json({
+        res.status(200).json({
             message : 'El usuario se ha actualizado correctamente',
             user : userResponse
         });
 
     } catch (error) {
-        console.error('Error al actualizar el usuario: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
     try {
         
         const { id } = req.params;
-        const user = await User.findById(id);
+        
+        const deletedUser = await deleteUserService(id);
 
         if (!user) {
-            return res.status(404).json({ message : 'No se encuentra un usuario registrado con ese id' });
+            return next(new AppError(
+                'No se pudo eliminar: usuario no encontrado',
+                404
+            ));
         }
 
-        await user.deleteOne();
+        const { password:_, ...userResponse } = deletedUser;
 
-        return res.status(200).json({ message : 'El usuario se ha eliminado correctamente' });
+        res.status(200).json({ 
+            message : 'El usuario se ha eliminado correctamente',
+            user: userResponse
+        });
 
     } catch (error) {
-        console.error('Error al eliminar el usuario: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
+    }
+};
+
+export const cancelUser = async(req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const cancelledUser = await cancelUserService(id);
+
+        if (!cancelledUser) {
+            return next(new AppError(
+                'No se pudo cancelar: usuario no encontrado',
+                404
+            ));
+        }
+
+        const { password:_, ...userResponse } = cancelledUser;
+
+        res.status(200).json({
+            message: 'El usuario se ha cancelado correctamente',
+            user: userResponse
+        })
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const activateUser = async(req, res, next) => {
+    try {
+        const { id } = req.params;
+
+        const activatedUser = await activateUserService(id);
+
+        if (!activatedUser) {
+            return next(new AppError(
+                'No se pudo activar: usuario no encontrado',
+                404
+            ));
+        }
+
+        const { password:_, ...userResponse } = activatedUser;
+
+        res.status(200).json({
+            message: 'El usuario se ha activado correctamente',
+            user: userResponse
+        })
+
+    } catch (error) {
+        next(error);
     }
 };

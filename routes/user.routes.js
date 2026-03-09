@@ -1,19 +1,22 @@
 import { Router } from "express";
 import {
     getUsers,
-    getUserById,
+    getUser,
     createUser,
     updateUser,
-    deleteUser
+    deleteUser,
+    cancelUser,
+    activateUser
 } from '../controllers/user.controller.js';
 import { verifyToken, isSuperAdmin } from "../middlewares/auth.middleware.js";
 
-const router = Router();
+export const userRoutes = Router();
 
-router.get('/', verifyToken, isSuperAdmin, getUsers);
-router.get('/:id', verifyToken, isSuperAdmin, getUserById);
-router.post('/', verifyToken, isSuperAdmin, createUser);
-router.put('/:id', verifyToken, isSuperAdmin, updateUser);
-router.delete('/:id', verifyToken, isSuperAdmin, deleteUser);
+userRoutes.get('/', verifyToken, isSuperAdmin, getUsers);
+userRoutes.get('/:id', verifyToken, isSuperAdmin, getUser);
+userRoutes.post('/', verifyToken, isSuperAdmin, createUser);
+userRoutes.put('/:id', verifyToken, isSuperAdmin, updateUser);
+userRoutes.patch('/:id/cancel', verifyToken, isSuperAdmin, cancelUser);
+userRoutes.patch('/:id/active', verifyToken, isSuperAdmin, activateUser);
+userRoutes.delete('/:id', verifyToken, isSuperAdmin, deleteUser);
 
-export const userRoutes = router;
