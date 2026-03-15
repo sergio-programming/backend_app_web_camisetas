@@ -1,10 +1,8 @@
 import { Router } from 'express';
-import { login, logout } from '../controllers/auth.controller.js';
+import { login, logout, refreshAccessToken } from '../controllers/auth.controller.js';
 
-const router = Router();
+export const authRoutes = Router();
 
-router.post('/login',  login);
-router.post('/logout', logout);
-
-
-export const authRoutes = router;
+authRoutes.post('/login',  login);
+authRoutes.post('/logout', logout);
+authRoutes.post('/refresh', refreshAccessToken);

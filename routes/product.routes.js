@@ -1,23 +1,20 @@
 import { Router } from "express";
 import {
     getProducts,
-    getProductById,
-    getShirts,
-    getAlbums,
+    getProduct,
+    getProductsByCategory,
     createProduct,
     updateProduct,
     deleteProduct
 } from '../controllers/product.controller.js';
 import { verifyToken, verifyRole } from '../middlewares/auth.middleware.js';
+import { ProductCategories } from "../models/product.model.js";
 
-const router = Router();
+export const productRoutes = Router();
 
-router.get('/', verifyToken, verifyRole(["superadmin", "admin"]), getProducts);
-router.get('/shirts', getShirts);
-router.get('/albums', getAlbums);
-router.get('/:id', verifyToken, verifyRole(["superadmin", "admin"]), getProductById);
-router.post('/', verifyToken, verifyRole(["superadmin", "admin"]), createProduct);
-router.put('/:id', verifyToken, verifyRole(["superadmin", "admin"]), updateProduct);
-router.delete('/:id', verifyToken, verifyRole(["superadmin", "admin"]), deleteProduct);
-
-export const productRoutes = router;
+productRoutes.get('/', verifyToken, verifyRole(ProductCategories), getProducts);
+productRoutes.get('/category/:category', verifyToken, verifyRole(ProductCategories), getProductsByCategory);
+productRoutes.get('/:id', verifyToken, verifyRole(ProductCategories), getProduct);
+productRoutes.post('/', verifyToken, verifyRole(ProductCategories), createProduct);
+productRoutes.put('/:id', verifyToken, verifyRole(ProductCategories), updateProduct);
+productRoutes.delete('/:id', verifyToken, verifyRole(ProductCategories), deleteProduct);

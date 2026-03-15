@@ -1,187 +1,117 @@
 import { Product } from "../models/product.model.js";
+import { AppError } from "../helpers/app.error.js";
+import { 
+    getProductsService,
+    getProductByIdService,
+    getProductsByCategoryService,
+    createProductService,
+    updateProductService,
+    deleteProductService,
+    validateCreateProductInput,
+    validateUpdateProductInput
+ } from "../services/product.services.js";
 
-export const getProducts = async (req, res) => {
+export const getProducts = async (req, res, next) => {
     try {
-        
-        const products = await Product.find();
+        const products = await getProductsService();
 
-        if (products.length === 0) {
-            return res.status(400).json({ message : 'No se encuentran productos registrados actualmente' });
-        }
-
-        return res.status(200).json(products);
+        res.status(200).json(products);
 
     } catch (error) {
-        console.error('Error al obtener los productos: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const getProductById = async (req, res) => {
+export const getProduct = async (req, res, next) => {
     try {
-        
         const { id } = req.params;
-        const product = await Product.findById(id);
+        const product = await getProductByIdService(id);
 
         if (!product) {
-            return res.status(404).json({ message : 'No se encuentra un producto registrado con ese id' });
+            return res.status(200).json(null);
         }
 
-        return res.status(200).json(product);
+        res.status(200).json(product);
 
     } catch (error) {
-        console.error('Error al obtener el producto: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const getShirts = async (req, res) => {
+export const getProductsByCategory = async (req, res, next) => {
     try {
-        
-        const shirts = await Product.find({ categoria : 'Camisetas' });
+        const { category } = req.params;
 
-        if (!shirts) {
-            return res.status(404).json({ message : 'No se encuentran productos registrados en la categoria Camisetas ' });
-        }
+        const products = await getProductsByCategoryService(category);
 
-        return res.status(200).json(shirts);
+        res.status(200).json(products);
 
     } catch (error) {
-        console.error('Error al obtener las camisetas: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const getAlbums = async (req, res) => {
-    try {
-        
-        const albums = await Product.find({ categoria : 'Discos' });
+export const createProduct = async (req, res, next) => {
+    try {        
+        const validatedData = await validateCreateProductInput(req.body);
 
-        if (!albums) {
-            return res.status(404).json({ message : 'No se encuentran productos registrados en la categoria Discos ' });
-        }
+        const newProduct = await createProductService(validatedData);
 
-        return res.status(200).json(albums);
-
-    } catch (error) {
-        console.error('Error al obtener los discos: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
-    }
-};
-
-export const createProduct = async (req, res) => {
-    try {
-        
-        const { codigo, descripcion, precio, categoria, imagen } = req.body;
-
-        if (!codigo || !descripcion || !precio || !categoria || !imagen ) {
-            return res.status(400).json({ message : 'Los campos requeridos son obligatorios' });
-        }
-
-        if (codigo < 6) {
-            return res.status(400).json({ message : 'El código debe tener una longitud mínima de 6 caracteres' });
-        }
-
-        if (precio < 0) {
-            return res.status(400).json({ message : 'No se permiten valores negativos para el precio' });
-        }
-
-        if (categoria !== "Camisetas" && categoria !== "Discos") {
-            return res.status(400).json({ message : 'La categoría enviada no es válida' });
-        }
-
-        const productByCode = await Product.findOne({ codigo : codigo });
-
-        if (productByCode) {
-            return res.status(409).json({ message : `Ya existe un producto registrado con el codigo ${codigo}` });
-        }
-
-        const newProduct = new Product ({
-            codigo,
-            descripcion,
-            precio,
-            categoria,
-            imagen
-        });
-
-        const createdProduct = await newProduct.save();
-
-        return res.status(201).json({
-            message : 'El producto se ha creado correctamente',
-            product : createdProduct
+        res.status(201).json({
+            message: 'El producto se ha creado correctamente',
+            product: newProduct
         });
 
     } catch (error) {
-        console.error('Error al crear el producto: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const updateProduct = async (req, res) => {
+export const updateProduct = async (req, res, next) => {
     try {
         
         const { id } = req.params;
-        const { codigo, descripcion, precio, categoria, imagen } = req.body;
 
-        const product = await Product.findById(id);
+        const validatedData = await validateUpdateProductInput(id, req.body);
 
-        if (!product) {
-            return res.status(404).json({ message : 'No se encuentra un producto registrado con ese id' });
+        const updatedProduct = await updateProductService(id, validatedData);
+        
+        if (!updatedProduct) {
+            return next(new AppError(
+                'No se pudo actualizar: producto no encontrado',
+                404
+            ));
         }
 
-        if (codigo !== undefined && codigo !== product.codigo) {
-            if (codigo < 6) {
-                return res.status(400).json({ message : 'El código debe tener una longitud mínima de 6 caracteres' });
-            }
-            const productByCode = await Product.findOne({ codigo : codigo });
-            if (productByCode) {
-                return res.status(409).json({ message : `Ya existe un producto registrado con el codigo ${codigo}` });
-            }
-        }
-
-        if (precio !== undefined && precio < 0) {
-            return res.status(400).json({ message : 'No se permiten valores negativos para el precio' });
-        }
-
-        if (categoria !== undefined && !["Camisetas", "Discos"].includes(categoria)) {
-            return res.status(400).json({ message : 'La categoría enviada no es válida' });
-        }
-
-        if (codigo !== undefined) product.codigo = codigo;
-        if (descripcion !== undefined) product.descripcion = descripcion;
-        if (precio !== undefined) product.precio = precio;
-        if (categoria !== undefined) product.categoria = categoria;
-        if (imagen !== undefined) product.imagen = imagen;
-
-        await product.save();
-
-        return res.status(200).json({
+        res.status(200).json({
             message : 'El producto se ha actualizado correctamente',
-            product: product
+            product: updatedProduct
         });
 
     } catch (error) {
-        console.error('Error al actualizar el producto: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
 
-export const deleteProduct = async (req, res) => {
+export const deleteProduct = async (req, res, next) => {
     try {
         
         const { id } = req.params;
-        const product = await Product.findById(id);
+        const deletedProduct = await deleteProductService(id);
 
-        if (!product) {
-            return res.status(404).json({ message : 'No se encuentra un producto registrado con ese id' });
+        if (!deletedProduct) {
+            return next(new AppError(
+                'No se pudo eliminar: producto no encontrado',
+                404
+            ));
         }
 
-        await product.deleteOne();
-
-        return res.status(200).json({ message : 'El producto se ha eliminado correctamente' });
+        res.status(200).json({ 
+            message : 'El producto se ha eliminado correctamente',
+            product: deletedProduct
+        });
 
     } catch (error) {
-        console.error('Error al eliminar el producto: ', error);
-        return res.status(500).json({ message : 'Error interno del servidor' });
+        next(error);
     }
 };
