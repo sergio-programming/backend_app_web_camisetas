@@ -107,7 +107,7 @@ export const deleteUser = async (req, res, next) => {
         
         const deletedUser = await deleteUserService(id);
 
-        if (!user) {
+        if (!deletedUser) {
             return next(new AppError(
                 'No se pudo eliminar: usuario no encontrado',
                 404
