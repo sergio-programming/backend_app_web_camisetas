@@ -1,6 +1,6 @@
 import { get } from 'mongoose';
 import { AppError } from '../helpers/app.error.js';
-import { Product, ProductCategories } from "../models/product.model";
+import { Product, ProductCategories } from "../models/product.model.js";
 
 const isValidCode = (code) => /^[A-Z]{3}-\d{4}$/.test(code);
 const verifyCode = async(id, code) => {

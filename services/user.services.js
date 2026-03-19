@@ -1,7 +1,7 @@
-import { User, UserRoles } from "../models/user.model";
+import { User, UserRoles } from "../models/user.model.js";
 
 export const getUsersService = async() => {
-    return User.find().sort({ createdAt: -1 }).lean().exec();
+    return User.find().select('-password').sort({ createdAt: -1 }).lean().exec();
 };
 
 export const getUserByIdService = async(id) => {

@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { comparePassword } from "../helpers/password.helpers.js";
-import { getUserByEmailService } from "./user.services";
+import { getUserByEmailService } from "./user.services.js";
 import { AppError } from '../helpers/app.error.js';
 
 export const authenticateUser = async(body) => {

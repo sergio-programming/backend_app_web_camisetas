@@ -1,4 +1,4 @@
-import { generateTokens } from '../utils/token.utils.js';
+import { generateTokens } from '../helpers/token.helpers.js';
 import { authenticateUser, verifyRefreshToken } from '../services/auth.services.js';
 
 export const login = async (req, res, next) => {
