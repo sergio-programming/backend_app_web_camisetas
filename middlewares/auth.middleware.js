@@ -42,13 +42,13 @@ export const verifyRole = (rolesPermitidos) => {
     }
 };
 
-export const isSuperAdmin = async (req, res, next) => {
+export const isAdmin = async (req, res, next) => {
 
     if (!req.user) {
         return res.status(401).json({ message : 'Usuario no autenticado' });
     }
 
-    if (req.user.role !== "superadmin") {
+    if (req.user.role !== "admin") {
         return res.status(403).json({ message : 'Se requieren permisos de Super Administrador' });
     }
 

@@ -47,7 +47,7 @@ export const createUser = async (req, res, next) => {
 
         const validatedData = await validateCreateUserInput(req.body);
 
-        const hashedPassword = hashPassword(validatedData.password);
+        const hashedPassword = await hashPassword(validatedData.password);
 
         const newUser = await createUserService({
             ...validatedData,
