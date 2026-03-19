@@ -11,7 +11,7 @@ export const login = async (req, res, next) => {
         // MANDA EL REFRESH TOKEN POR COOKIE HTTP-ONLY
         res.cookie("refreshToken", refreshAccessToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true,
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 días
         });
@@ -35,7 +35,7 @@ export const logout = (req, res, next) => {
     try {
         res.clearCookie('refreshToken', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true,
             sameSite: "strict",
         });
 
@@ -67,7 +67,7 @@ export const refreshAccessToken = async (req, res, next) => {
         // OPCIONAL: Rotación de Refresh Token (Muy recomendado)
         res.cookie("refreshToken", newRefreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: true,
             sameSite: "strict",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
